@@ -478,5 +478,92 @@ $('#export-backup').addEventListener('click',downloadBackup);$('#close-modal').a
 $('#global-search').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=e.target.value.trim();pageState.inventorySearch=v;pageState.productSearch=v;pageState.movementSearch=v;pageState.agingSearch=v;pageState.rotationSearch=v;pageState.inventoryPage=1;pageState.productPage=1;pageState.movementPage=1;pageState.agingPage=1;renderAll();navigate('inventory');$('#inv-search')?.focus();}});
 renderAll();bindRerenderInputs();
 </script>
+<!-- ... Todo tu HTML previo (Login y Contenedores) ... -->
+
+    <script>
+        // 1. Configuración de Supabase (Lo que ya tenías)
+        const SUPABASE_URL = 'https://smbcjlitgsbioyzfjmee.supabase.co';
+        const SUPABASE_ANON_KEY = 'AQUÍ_TU_ANON_KEY'; // Tu llave anon public
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 2. Funciones de Sesión (Las que ya tenías)
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                iniciarSistema(); // <-- Llama a cargar el inventario al entrar
+            }
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errorMsg.innerText = "Error: Credenciales incorrectas.";
+            } else {
+                errorMsg.innerText = "";
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                iniciarSistema(); // <-- Llama a cargar el inventario al iniciar sesión
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('auth-container').style.display = 'flex';
+        }
+
+        // ==========================================
+        // 3. CÓDIGO DE TIEMPO REAL (PEGA ESTO AL FINAL)
+        // ==========================================
+
+        async function cargarInventario() {
+            const { data: productos, error } = await supabaseClient
+                .from('inventario') // Nombre de tu tabla en Supabase
+                .select('*');
+
+            if (error) {
+                console.error("Error al obtener inventario:", error);
+                return;
+            }
+
+            console.log("Inventario cargado:", productos);
+            // Aquí puedes llamar a tu función que dibuja la lista/tabla de productos
+        }
+
+        function activarSincronizacionEnVivo() {
+            supabaseClient
+                .channel('cambios-inventario')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'inventario' },
+                    (payload) => {
+                        console.log('¡Cambio detectado en tiempo real!', payload);
+                        cargarInventario(); // Recarga automáticamente para ambos usuarios
+                    }
+                )
+                .subscribe();
+        }
+
+        async function iniciarSistema() {
+            await cargarInventario();
+            activarSincronizacionEnVivo();
+        }
+
+        // Comprobar la sesión al cargar la página
+        checkSession();
+    </script>
+</body>
+</html>
 </body>
 </html>
