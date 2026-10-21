@@ -1,3 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Inventario - Almacén</title>
+    <!-- Librería de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --site-primary: #123744;
+            --site-background: #F2F6F8;
+            --site-font-body: Inter, sans-serif;
+        }
+        body {
+            font-family: var(--site-font-body);
+            background-color: var(--site-background);
+            margin: 0;
+            padding: 0;
+        }
+        /* Estilos del Login */
+        #auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .auth-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 320px;
+        }
+        .auth-card h2 {
+            margin-top: 0;
+            color: var(--site-primary);
+            text-align: center;
+        }
+        .auth-card input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .auth-card button {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--site-primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .auth-card button:hover {
+            opacity: 0.9;
+        }
+        #error-msg {
+            color: red;
+            font-size: 14px;
+            text-align: center;
+        }
+        /* Aplicación principal (oculta hasta iniciar sesión) */
+        #app-container {
+            display: none;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="auth-container">
+        <div class="auth-card">
+            <h2>Control de Almacén</h2>
+            <p style="text-align: center; font-size: 14px; color: #666;">Inicia sesión para continuar</p>
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button onclick="handleLogin()">Ingresar</button>
+            <p id="error-msg"></p>
+        </div>
+    </div>
+
+    <!-- APLICACIÓN DE INVENTARIO -->
+    <div id="app-container">
+        <h1>Sistema de Control de Inventario</h1>
+        <p>¡Bienvenido al sistema conectado a Supabase!</p>
+        <button onclick="handleLogout()" style="padding: 8px 15px; background: #c0392b; color: white; border: none; border-radius: 4px; cursor: pointer;">Cerrar Sesión</button>
+        
+        <!-- AQUÍ VA EL RESTO DE TU CONTENIDO DE INVENTARIO -->
+    </div>
+
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://smbcjlitgsbioyzfjmee.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtYmNqbGl0Z3NiaW95emZqbWVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1ODUwNTQsImV4cCI6MjEwODE2MTA1NH0.j4GkD9DJ4VCZg01v6EuwDfRe_Aw4anePpNavBY8yi1U'; // Reemplaza esto con tu llave anon public
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Verificar si ya hay una sesión activa
+        async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+            }
+        }
+
+        // Función de Inicio de Sesión
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errorMsg.innerText = "Error: Credenciales incorrectas o usuario no registrado.";
+            } else {
+                errorMsg.innerText = "";
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+            }
+        }
+
+        // Función para Cerrar Sesión
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('auth-container').style.display = 'flex';
+        }
+
+        // Comprobar al cargar la página
+        checkSession();
+    </script>
+</body>
+</html>
 <!doctype html>
 <html lang="es">
 <head>
