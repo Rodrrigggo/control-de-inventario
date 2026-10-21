@@ -563,6 +563,47 @@ renderAll();bindRerenderInputs();
         // Comprobar la sesión al cargar la página
         checkSession();
     </script>
+// Función para registrar movimiento de salida
+async function registrarSalida() {
+    // 1. Capturar los valores que ingresó el usuario en tu formulario
+    const productoSeleccionado = document.getElementById('selectProducto').value; // cambia por el ID de tu input/select
+    const cantidadSalida = parseInt(document.getElementById('inputCantidad').value); // cambia por el ID de tu input
+    const motivo = document.getElementById('inputMotivo')?.value || 'Salida de almacén';
+
+    // 2. Obtener los datos del usuario conectado
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+        alert("Debes estar conectado para registrar una salida.");
+        return;
+    }
+
+    // 3. ENVIAR A SUPABASE (Tabla: inventory_movements)
+    const { data, error } = await supabaseClient
+        .from('inventory_movements')
+        .insert([
+            {
+                operation: 'OUT',                  // Identifica que es una salida
+                quantity: cantidadSalida,          // Cantidad de unidades
+                source_key: productoSeleccionado,   // Producto o código
+                notes: motivo,                     // Notas u observaciones
+                user_email: user.email             // Correo del usuario activo
+            }
+        ]);
+
+    if (error) {
+        console.error("Error al registrar la salida:", error);
+        alert("Hubo un error al guardar en la nube: " + error.message);
+    } else {
+        console.log("¡Salida registrada con éxito en Supabase!", data);
+        
+        // Limpiar los campos del formulario
+        document.getElementById('inputCantidad').value = '';
+        
+        // Cargar y refrescar la tabla
+        cargarInventario();
+    }
+}
 </body>
 </html>
 </body>
